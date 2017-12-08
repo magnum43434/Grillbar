@@ -8,6 +8,7 @@ pris3=35
 pris4=30
 pris5=27
 ialt=0
+derp=0
 
 menu1="Burger menu med pomfritter og sodavand"
 menu2="Stor burger menu med pomfritter og sodavand"
@@ -15,54 +16,37 @@ menu3="Fransk hotdog med sodavand"
 menu4="Hotdog menu med sodavand"
 menu5="Pomfritter menu med sodavand"
 
+SERVICE='checker'
+
 #Start function
 function main {
-  if pidof -x "checker.sh" >/dev/null; then
+  if ps ax | grep -v grep | grep $SERVICE > /dev/null; then
     bestilling
   else
-    chmod +x checker.sh
-    terminal -e ./checker.sh
-    main
+    if [ -f ./checker.sh ]; then
+      chmod +x checker.sh
+      gnome-terminal -x bash -c './checker.sh; exec bash'
+      main
+    else
+      create
+    fi
   fi
-
-#   if [ -e check.sh ] #hvis cron virker så uncomment if
-#   then
-#     echo "ok"
-#     timer
-#     bestilling
-#   else
-#     echo "nok"
-#     create
-# fi
 }
 
 function menuen {
   clear
-  echo "################################################################"
-  echo "# Burger menu med pomfritter og sodavand                 45 kr #"
-  echo "# Stor burger menu med pomfritter og sodavand            65 kr #"
-  echo "# Fransk hotdog menu med sodavand                        35 kr #"
-  echo "# Hotdog menu med sodavand                               30 kr #"
-  echo "# Pomfrit menu med sodavand                              27 kr #"
-  echo "################################################################"
+  echo "----------------------------------------------------"
+  echo "| $(echo $menu1 $pris1 "kr")"
+  echo "| $(echo $menu2 $pris2 "kr")"
+  echo "| $(echo $menu3 $pris3 "kr")"
+  echo "| $(echo $menu4 $pris4 "kr")"
+  echo "| $(echo $menu5 $pris5 "kr")"
+  echo "----------------------------------------------------"
 }
 
 #Laver en pause som venter på man klikker enter
 function pause(){
    read -p "$*"
-}
-#laver en cron som kører det function log gør
-function timer {
-  place=$(pwd)
-  place="$place/check.sh"
-  #skriver ud nuværende crontab
-  crontab -l > mycron
-  #echo ny cron ind cron fil
-  echo "30 23 * * 1-5 $place" >> mycron
-  #installer ny cron fil
-  crontab mycron
-  rm mycron
-  echo "done"
 }
 
 #udviser det du har bestilt og gemmer det i en fil der hedder bestillinger
@@ -72,9 +56,9 @@ function regning {
   regningpris=$(cat priser)
   rm -f ./bestilling
   rm -f ./priser
-  echo "###################################################"
+  echo "---------------------------------------------------"
   paste -d' ' <(echo "$regningbestil") <(echo "$regningpris")
-  echo "###################################################"
+  echo "---------------------------------------------------"
   echo "" >> bestillinger
   echo "$(date +%H:%M:%S)" >> bestillinger
   echo "$(paste -d' ' <(echo "$regningbestil") <(echo "$regningpris"))" >> bestillinger
@@ -90,25 +74,30 @@ function bestilling {
   read valg
   case $valg in
 
-    [burger]*)
+    [1]*)
       bestil=$menu1
       pris=$pris1
       ;;
-    [storburger]*)
+    [2]*)
       bestil=$menu2
       pris=$pris2
       ;;
-    [fransk]*)
+    [3]*)
       bestil=$menu3
       pris=$pris3
       ;;
-    [hotdog]*)
+    [4]*)
       bestil=$menu4
       pris=$pris4
       ;;
-    [pomfritter]*)
+    [5]*)
       bestil=$menu5
       pris=$pris5
+      ;;
+    [exit]*)
+      pkill -f checker.sh
+      clear
+      return
       ;;
   esac
   clear
@@ -140,31 +129,9 @@ function bestilling {
     ;;
   esac
 }
-#laver filen check hvis den ikke findes
+#laver fil check hvis den ikke findes
 function create {
-  touch check.sh
-  chmod +x ./check.sh
-
-  echo "#!/bin/bash" >>check.sh
-  echo "" >>check.sh
-  echo  "mkdir -p ./logfiles;" >>check.sh
-  echo  "cp ./bestillinger ./logfiles" >>check.sh
-  echo  "cp ./omsaetning ./logfiles" >>check.sh
-  echo  "summen=$\(awk '{ sum += $1 } END { print sum }' ./logfiles/omsaetning)" >>check.sh
-  echo  "echo "" >> ./logfiles/omsaetning" >>check.sh
-  echo  "echo "Ialt:""$summen" >> ./logfiles/omsaetning" >>check.sh
-  echo  "chmod 555 ./logfiles/bestillinger" >>check.sh
-  echo  "chmod 555 ./logfiles/omsaetning" >>check.sh
-  echo  "fzip logfiles" >>check.sh
-  echo  "mv ./logfiles.zip ./$\(date +%d-%m-%Y).zip" >>check.sh
-  echo  "rm -f ./bestillinger" >>check.sh
-  echo  "rm -f ./omsaetning" >>check.sh
-  echo  "rm -rf ./logfiles" >>check.sh
-  echo  "" >>check.sh
-  echo  "function fzip {" >>check.sh
-  echo      "zip -r $1 $1" >>check.sh
-  echo  "}" >>check.sh
-  sed 's/[\]//g' check.sh
+  wget https://raw.githubusercontent.com/magnum43434/Grillbar/master/checker.sh
   main
 }
 
@@ -182,7 +149,6 @@ function log {
   rm -f ./bestillinger
   rm -f ./omsaetning
   rm -rf ./logfiles
-  main
 }
 #zipper mapper
 function fzip {
