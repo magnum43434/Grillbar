@@ -135,24 +135,4 @@ function create {
   main
 }
 
-function log {
-  mkdir -p ./logfiles;
-  cp ./bestillinger ./logfiles
-  cp ./omsaetning ./logfiles
-  summen=$(awk '{ sum += $1 } END { print sum }' ./logfiles/omsaetning)
-  echo "" >> ./logfiles/omsaetning
-  echo "Ialt:""$summen" >> ./logfiles/omsaetning
-  chmod 555 ./logfiles/bestillinger
-  chmod 555 ./logfiles/omsaetning
-  fzip logfiles
-  mv ./logfiles.zip ./$(date +%d-%m-%Y).zip
-  rm -f ./bestillinger
-  rm -f ./omsaetning
-  rm -rf ./logfiles
-}
-#zipper mapper
-function fzip {
-    zip -r $1 $1
-}
-
 main
